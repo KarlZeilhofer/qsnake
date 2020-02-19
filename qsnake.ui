@@ -45,7 +45,14 @@
     <addaction name="actionHard"/>
     <addaction name="actionExtreme"/>
    </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionRestore_Defaults"/>
+   </widget>
    <addaction name="menuDifficulty"/>
+   <addaction name="menuSettings"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionEasy">
@@ -81,6 +88,11 @@
    </property>
    <property name="text">
     <string>Extreme</string>
+   </property>
+  </action>
+  <action name="actionRestore_Defaults">
+   <property name="text">
+    <string>Restore Defaults</string>
    </property>
   </action>
  </widget>

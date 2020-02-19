@@ -2,7 +2,7 @@
 #define QSNAKE_HH
 
 #include <QMainWindow>
-#include "scene.hh"
+#include "game.hh"
 #include <QLabel>
 #include <QTimer>
 
@@ -10,13 +10,13 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class QSnake; }
 QT_END_NAMESPACE
 
-class QSnake : public QMainWindow
+class MainWindow : public QMainWindow
 {
 	Q_OBJECT
 	
 public:
-	QSnake(QWidget *parent = nullptr);
-	~QSnake();
+	MainWindow(QWidget *parent = nullptr);
+	~MainWindow();
 	
 public slots:
 	void timeStep();
@@ -31,15 +31,19 @@ private slots:
 	
 	void on_actionExtreme_triggered();
 	
+	void on_actionRestore_Defaults_triggered();
+	
 private:
-	void pause();
+	enum Difficulty{Easy, Medium, Hard, Extreme};
+	
 	void setScore();
+	void setDifficulty(Difficulty d);
+
 private:
 	Ui::QSnake *ui;
 	
-	Scene* scene;
+	Game* game;
 	QTimer* timer;
-	bool paused=false;
 	QLabel* score;
 	int delay_ms = 250;
 };

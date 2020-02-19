@@ -1,16 +1,61 @@
-#include "scene.hh"
+#include "game.hh"
 
 #include <qgraphicsitem.h>
+#include <QSettings>
 
-Scene::Scene()
+Game::Game()
 {
+	BombColor = QColor(Qt::yellow);
+	SnakeColor1 = QColor(100, 255, 100);
+	SnakeColor2 = QColor(255,100,100);
+	SnakeHeadColor = Qt::red;
+	BackgroundColor = QColor(50,50,50);
+	BrickColor = Qt::gray;
+	TextColor = Qt::white;
+	
+	setBackgroundBrush(BackgroundColor);
+	
+	setDefaults();
+	QSettings set;
+	
+	GrowInterval = 10; // grow snake every 10 steps
+	BombInterval = 100; // spawn a bomb on the field every 100 steps
+	
+	valueNames << "BombRadius";
+	valueNames << "SizeX";
+	valueNames << "SizeY";
+	valueNames << "BrickSize";
+	valueNames << "BrickAttraction";
+	valueNames << "HeadClearance";
+	valueNames << "InitialLength";
+	valueNames << "GrowInterval";
+	valueNames << "BombInterval";
+	
+	values.append(&BombRadius);
+	values.append(&SizeX);
+	values.append(&SizeY);
+	values.append(&BrickSize);
+	values.append(&BrickAttraction);
+	values.append(&HeadClearance);
+	values.append(&InitialLength);
+	values.append(&GrowInterval);
+	values.append(&BombInterval);
+
+	for(int i=0; i<valueNames.length(); i++){
+		if(set.contains(valueNames[i])){
+			*(values[i]) = set.value(valueNames[i]).toInt();
+		}else{
+			set.setValue(valueNames[i], *(values[i]));
+		}
+	}
+	
+	
 	reset();
-	setBackgroundBrush(QColor(QColor(50,50,50)));
 }
 
-void Scene::moveSnake()
+void Game::moveSnake()
 {
-	if(dead){
+	if(dead || paused){
 		return;
 	}
 	
@@ -71,7 +116,7 @@ void Scene::moveSnake()
 	cnt++;
 }
 
-void Scene::changeDirection(Scene::Direction dir)
+void Game::changeDirection(Game::Direction dir)
 {
 	Direction lastDir;
 	if(steerQueue.length() >= 1){
@@ -91,7 +136,7 @@ void Scene::changeDirection(Scene::Direction dir)
 	}
 }
 
-void Scene::reset()
+void Game::reset()
 {
 	dead = false;
 	snake.clear();
@@ -100,7 +145,7 @@ void Scene::reset()
 	lastBomb = QPoint();
 	
 	for(int i=0; i<InitialLength; i++){
-		snake.insert(0,QPoint(i+SizeX/2,SizeY/2));
+		snake.insert(0,QPoint(i+1,SizeY/2));
 	}
 	
 	steerQueue.clear();
@@ -114,9 +159,10 @@ void Scene::reset()
 		bricks.insert(0,QPoint(0,y));
 		bricks.insert(0,QPoint(SizeX,y));
 	}
+	paused = false;
 }
 
-void Scene::addBrick()
+void Game::addBrick()
 {
 	int neighbourSearchTrials = BrickAttraction; // countdown for searching neighbours, if zero, we will plant a hermit in the middle of nowhere
 	
@@ -160,7 +206,7 @@ void Scene::addBrick()
 	}
 }
 
-void Scene::addBomb()
+void Game::addBomb()
 {
 	int retries = 1000;
 	while(retries--){
@@ -177,7 +223,7 @@ void Scene::addBomb()
 	}
 }
 
-void Scene::triggerBomb()
+void Game::triggerBomb()
 {
 	int r=BombRadius;
 	
@@ -200,24 +246,24 @@ void Scene::triggerBomb()
 	}
 }
 
-void Scene::paint()
+void Game::paint()
 {
 	clear();
 	
 	// Snake
 	for(int i=0; i<snake.length(); i++){
 		QPoint p = snake[i];
-		QBrush brush(QColor(200, 255, 200));
+		QBrush brush(SnakeColor1);
 		if(i==0){
-			brush = QBrush(Qt::red);
+			brush = QBrush(SnakeHeadColor);
 		}else if(i <= bombsCounter){
+			// collected bombs
+			brush = QBrush(BombColor);
+		}else if((i/10)%2 == 0){
 			// stripes of the snake
-			brush = QBrush(QColor(150,150,255));
-		}else if(i%5 == 0){
-			// stripes of the snake
-			brush = QBrush(QColor(255,220,220));
+			brush = QBrush(SnakeColor2);
 		}
-		auto item = new QGraphicsEllipseItem(BoxSize*p.x(), BoxSize*p.y(), BoxSize, BoxSize);
+		auto item = new QGraphicsEllipseItem(BrickSize*p.x(), BrickSize*p.y(), BrickSize, BrickSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
@@ -225,9 +271,9 @@ void Scene::paint()
 	// Bricks
 	for(int i=0; i<bricks.length(); i++){
 		QPoint p = bricks[i];
-		QBrush brush = QBrush(Qt::gray);
+		QBrush brush = QBrush(BrickColor);
 		
-		auto item = new QGraphicsRectItem(BoxSize*p.x(), BoxSize*p.y(), BoxSize, BoxSize);
+		auto item = new QGraphicsRectItem(BrickSize*p.x(), BrickSize*p.y(), BrickSize, BrickSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
@@ -235,49 +281,103 @@ void Scene::paint()
 	// Bombs
 	for(int i=0; i<bombs.length(); i++){
 		QPoint p = bombs[i];
-		QBrush brush = QBrush(QColor(150,150,255));
+		QBrush brush = QBrush(BombColor);
 		
-		auto item = new QGraphicsEllipseItem(BoxSize*p.x(), BoxSize*p.y(), BoxSize, BoxSize);
+		auto item = new QGraphicsEllipseItem(BrickSize*p.x(), BrickSize*p.y(), BrickSize, BrickSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
 	
 	// explosion radius
 	if(lastBomb.isNull() == false){
-		QBrush brush(QBrush(QColor(150,150,255)));
-		int d = BoxSize*BombRadius;
-		auto item = new QGraphicsEllipseItem(BoxSize*lastBomb.x()-d, BoxSize*lastBomb.y()-d, 
-											 BoxSize*2*BombRadius, BoxSize*2*BombRadius);
+		QColor c = BombColor;
+		c.setAlpha(128);
+		QBrush brush(c);
+		
+		int d = BrickSize*BombRadius;
+		auto item = new QGraphicsEllipseItem(BrickSize*lastBomb.x()-d, BrickSize*lastBomb.y()-d, 
+											 BrickSize*2*BombRadius, BrickSize*2*BombRadius);
 		item->setBrush(brush);
 		addItem(item);
 		lastBomb = QPoint();
 	}
 	
+	if(dead || paused){
+		QBrush brush(QColor(0,0,0,128)); // transparent black as text background color
+		auto rect = new QGraphicsRectItem(0,0,BrickSize*(SizeX+1), BrickSize*(SizeY+1));
+		rect->setBrush(brush);
+		addItem(rect);
+	}
 	// Print Score
 	if(dead){
-		QBrush brush(Qt::white);
-		auto item = new QGraphicsSimpleTextItem(QString("Score %1").arg(length()));
+		auto brush = QBrush(TextColor);
+		auto item = new QGraphicsSimpleTextItem(QString("SCORE %1").arg(length()));
 		item->setBrush(brush);
 		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
 		QRectF bR = item->sceneBoundingRect();
-		item->setPos(QPoint(BoxSize*SizeX/2 - int(bR.width()/2), 
-							BoxSize*SizeY/2 - int(bR.height()/2)));
+		item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), 
+							BrickSize*SizeY/2 - int(bR.height()/2)));
+		addItem(item);
+	}
+	
+	// Print Pause
+	if(paused){
+		auto brush = QBrush(TextColor);
+		auto item = new QGraphicsSimpleTextItem(QString("PAUSED").arg(length()));
+		item->setBrush(brush);
+		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
+		QRectF bR = item->sceneBoundingRect();
+		item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), 
+							BrickSize*SizeY/2 - int(bR.height()/2)));
 		addItem(item);
 	}
 }
 
-int Scene::length()
+int Game::length()
 {
 	return snake.length();
 }
 
-void Scene::die()
+void Game::die()
 {
 	dead = true;
 	paint();
 }
 
-bool Scene::isDead()
+void Game::togglePause()
+{
+	paused = !paused;
+	paint();
+}
+
+bool Game::isDead()
 {
 	return dead;
+}
+
+void Game::restoreDefaults()
+{
+	QSettings set;
+	die();
+	
+	setDefaults();
+	
+	for(int i=0; i<valueNames.length(); i++){
+		set.setValue(valueNames[i], *(values[i]));
+	}
+	
+	reset();
+}
+
+void Game::setDefaults()
+{
+	BombRadius=10;
+	SizeX = 100; // boxes
+	SizeY = 60; // boxes
+	BrickSize = 8; // pixel
+	BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
+	HeadClearance = 7; // zone around head, forbidden for new bricks
+	InitialLength = 10;	
+	GrowInterval = 10; // grow snake every 10 steps
+	BombInterval = 100; // spawn a bomb on the field every 100 steps
 }
