@@ -13,12 +13,12 @@ public:
 	
 	void moveSnake();
 	void changeDirection(Direction dir);
-	void reset();
+	void restart();
 	void addBrick();
 	void addBomb();
 	void triggerBomb();
 	void paint();
-	int length();
+	int score();
 	void die();
 	void togglePause();
 	bool isDead();

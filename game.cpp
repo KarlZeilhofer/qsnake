@@ -49,8 +49,7 @@ Game::Game()
 		}
 	}
 	
-	
-	reset();
+	restart();
 }
 
 void Game::moveSnake()
@@ -95,11 +94,11 @@ void Game::moveSnake()
 	}
 	
 	snake.insert(0, newHead);
-	if(cnt%10 != 0){
+	if(cnt%GrowInterval != 0){
 		snake.removeLast();
 	}
 	addBrick();
-	if(cnt%100 == 0){
+	if(cnt%BombInterval == 0){
 		addBomb();
 	}
 	
@@ -118,6 +117,10 @@ void Game::moveSnake()
 
 void Game::changeDirection(Game::Direction dir)
 {
+	if(paused){
+		togglePause();
+	}
+	
 	Direction lastDir;
 	if(steerQueue.length() >= 1){
 		lastDir = steerQueue.last();
@@ -136,7 +139,7 @@ void Game::changeDirection(Game::Direction dir)
 	}
 }
 
-void Game::reset()
+void Game::restart()
 {
 	dead = false;
 	snake.clear();
@@ -225,6 +228,10 @@ void Game::addBomb()
 
 void Game::triggerBomb()
 {
+	if(paused){
+		togglePause();
+	}
+	
 	int r=BombRadius;
 	
 	if(bombsCounter > 0){
@@ -311,7 +318,7 @@ void Game::paint()
 	// Print Score
 	if(dead){
 		auto brush = QBrush(TextColor);
-		auto item = new QGraphicsSimpleTextItem(QString("SCORE %1").arg(length()));
+		auto item = new QGraphicsSimpleTextItem(QString("SCORE %1").arg(score()));
 		item->setBrush(brush);
 		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
 		QRectF bR = item->sceneBoundingRect();
@@ -321,9 +328,9 @@ void Game::paint()
 	}
 	
 	// Print Pause
-	if(paused){
+	if(paused && !dead){
 		auto brush = QBrush(TextColor);
-		auto item = new QGraphicsSimpleTextItem(QString("PAUSED").arg(length()));
+		auto item = new QGraphicsSimpleTextItem(QString("PAUSED").arg(score()));
 		item->setBrush(brush);
 		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
 		QRectF bR = item->sceneBoundingRect();
@@ -333,7 +340,7 @@ void Game::paint()
 	}
 }
 
-int Game::length()
+int Game::score()
 {
 	return snake.length();
 }
@@ -346,7 +353,11 @@ void Game::die()
 
 void Game::togglePause()
 {
-	paused = !paused;
+	if(dead){
+		paused = false;
+	}else{
+		paused = !paused;
+	}
 	paint();
 }
 
@@ -366,7 +377,7 @@ void Game::restoreDefaults()
 		set.setValue(valueNames[i], *(values[i]));
 	}
 	
-	reset();
+	restart();
 }
 
 void Game::setDefaults()

@@ -20,6 +20,8 @@ a very simple game written in Qt5 based on these rules:
 * arrow keys
 * spacebar (resets game and triggers bombs)
 * P for pausing the game
+* ESC quits the game
+* 0 resets the high score
 
 # Requirements
 Nothing special, a default PC should do it. In the code is still some potential for 

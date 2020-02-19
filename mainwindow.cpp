@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->statusbar->addWidget(score);
 	
 	setWindowTitle(QApplication::applicationName() + " V" + QApplication::applicationVersion());
-	showMaximized();
+	showFullScreen();
 }
 
 MainWindow::~MainWindow()
@@ -86,7 +86,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		{
 			if(game->isDead()){
 				qDebug() << "reset()";
-				game->reset();
+				game->restart();
 			}else {
 				game->triggerBomb();
 			}
@@ -96,6 +96,10 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		{
 			QSettings set;
 			set.setValue("highScore", 0);
+			return true;
+		}else if( keyEvent->key() == Qt::Key_Escape )
+		{
+			QApplication::exit();
 			return true;
 		}
 	}
@@ -107,7 +111,7 @@ void MainWindow::setScore()
 	QSettings set;
 	int hs = set.value("highScore").toInt();
 	
-	int l = game->length();
+	int l = game->score();
 	score->setText(QString("Score: %1    High Score: %2").arg(l).arg(hs));
 	
 	if(l > hs){
