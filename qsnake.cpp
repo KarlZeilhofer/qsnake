@@ -7,6 +7,7 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QSettings>
+#include <QActionGroup>
 
 QSnake::QSnake(QWidget *parent)
 	: QMainWindow(parent)
@@ -20,9 +21,15 @@ QSnake::QSnake(QWidget *parent)
 	
 	scene->addItem(new QGraphicsRectItem(50, 50, 60, 40, nullptr));
 	
+	QActionGroup* ag_difficulty =  new QActionGroup(this);
+	ag_difficulty->addAction(ui->actionEasy);
+	ag_difficulty->addAction(ui->actionMedium);
+	ag_difficulty->addAction(ui->actionHard);
+	ag_difficulty->addAction(ui->actionExtreme);
+	
 	timer = new QTimer(this);
 	connect(timer, SIGNAL(timeout()), this, SLOT(timeStep()));
-	timer->start(150);
+	timer->start(250);
 	
 	// catch all events by our own eventFilter()
 	qApp->installEventFilter(this);
@@ -111,3 +118,27 @@ void QSnake::setScore()
 }
 
 
+
+void QSnake::on_actionEasy_triggered()
+{
+    delay_ms = 250;
+	timer->setInterval(delay_ms);
+}
+
+void QSnake::on_actionMedium_triggered()
+{
+    delay_ms = 150; 
+	timer->setInterval(delay_ms);
+}
+
+void QSnake::on_actionHard_triggered()
+{
+    delay_ms = 100; 
+	timer->setInterval(delay_ms);
+}
+
+void QSnake::on_actionExtreme_triggered()
+{
+    delay_ms = 50; 
+	timer->setInterval(delay_ms);
+}

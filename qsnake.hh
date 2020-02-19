@@ -22,6 +22,15 @@ public slots:
 	void timeStep();
 	bool eventFilter(QObject* watched, QEvent* event );
 
+private slots:
+	void on_actionEasy_triggered();
+	
+	void on_actionMedium_triggered();
+	
+	void on_actionHard_triggered();
+	
+	void on_actionExtreme_triggered();
+	
 private:
 	void pause();
 	void setScore();
@@ -32,5 +41,6 @@ private:
 	QTimer* timer;
 	bool paused=false;
 	QLabel* score;
+	int delay_ms = 250;
 };
 #endif // QSNAKE_HH

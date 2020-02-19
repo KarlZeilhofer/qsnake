@@ -36,8 +36,53 @@
      <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuDifficulty">
+    <property name="title">
+     <string>Difficulty</string>
+    </property>
+    <addaction name="actionEasy"/>
+    <addaction name="actionMedium"/>
+    <addaction name="actionHard"/>
+    <addaction name="actionExtreme"/>
+   </widget>
+   <addaction name="menuDifficulty"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionEasy">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Easy</string>
+   </property>
+  </action>
+  <action name="actionMedium">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Medium</string>
+   </property>
+  </action>
+  <action name="actionHard">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hard</string>
+   </property>
+  </action>
+  <action name="actionExtreme">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Extreme</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

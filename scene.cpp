@@ -5,7 +5,7 @@
 Scene::Scene()
 {
 	reset();
-	setBackgroundBrush(QColor(Qt::black));
+	setBackgroundBrush(QColor(QColor(50,50,50)));
 }
 
 void Scene::moveSnake()
@@ -20,7 +20,7 @@ void Scene::moveSnake()
 		currentHeadDirection = steerQueue.first();
 		steerQueue.removeFirst();
 	}
-		
+	
 	QPoint newHead;
 	switch(currentHeadDirection){
 	case Up:
@@ -41,6 +41,14 @@ void Scene::moveSnake()
 		break;
 	}
 	
+	
+	// check for collision
+	if(snake.contains(newHead) ||
+			bricks.contains(newHead)){
+		die();
+		return;
+	}
+	
 	snake.insert(0, newHead);
 	if(cnt%10 != 0){
 		snake.removeLast();
@@ -49,29 +57,15 @@ void Scene::moveSnake()
 	if(cnt%100 == 0){
 		addBomb();
 	}
-
-	// check for collision
-	//   with snake
-	for(int i=1; i<snake.length(); i++){
-		if(newHead.x() == snake[i].x() &&
-				newHead.y() == snake[i].y()){
-			dead = true;
-			return;
-		}
-	}
-	//   with bricks
-	if(bricks.contains(newHead)){
-		dead = true;
-		return;
-	}
+	
 	
 	//   with bombs
 	if(bombs.contains(newHead)){
 		bombsCounter++;
 		bombs.removeOne(newHead);
 	}
-
-
+	
+	
 	paint();
 	
 	cnt++;
@@ -104,79 +98,63 @@ void Scene::reset()
 	bombsCounter = 0;
 	bombs.clear();
 	lastBomb = QPoint();
-
-	for(int i=0; i<15; i++){
-		snake.insert(0,QPoint(i+sizeX/2,sizeY/2));
+	
+	for(int i=0; i<InitialLength; i++){
+		snake.insert(0,QPoint(i+SizeX/2,SizeY/2));
 	}
-
+	
 	steerQueue.clear();
 	steerQueue.append(Right);
 	bricks.clear();
-	for(int x=0; x<sizeX; x++){
+	for(int x=0; x<SizeX; x++){
 		bricks.insert(0,QPoint(x,0));
-		bricks.insert(0,QPoint(x,sizeY));
+		bricks.insert(0,QPoint(x,SizeY));
 	}
-	for(int y=0; y<sizeY; y++){
+	for(int y=0; y<SizeY; y++){
 		bricks.insert(0,QPoint(0,y));
-		bricks.insert(0,QPoint(sizeX,y));
+		bricks.insert(0,QPoint(SizeX,y));
 	}
 }
 
 void Scene::addBrick()
 {
-	bool added = false;
-	bool collision = false;
-	int neighbourSearchTrials = 15; // countdown for searching neighbours, if zero, we will plant a hermit in the middle of nowhere
-	while(!added){
-		collision = false;
-		int x = rand()%sizeX;
-		int y = rand()%sizeY;
+	int neighbourSearchTrials = BrickAttraction; // countdown for searching neighbours, if zero, we will plant a hermit in the middle of nowhere
+	
+	int retries = 1000;
+	while(retries--){
+		QPoint p((rand()%(SizeX-1))+1, 
+				 (rand()%(SizeY-1))+1);
 		
 		// check for enough distance to head, to avoid unfair obstacles
-		if(abs(x-snake.first().x()) < 7 &&
-				abs(y-snake.first().y()) < 7){
-			collision = true;
+		if(abs(p.x()-snake.first().x()) <= HeadClearance &&
+				abs(p.y()-snake.first().y()) <= HeadClearance){
 			continue;
 		}
 		
-		// check random position against snake and bricks
-		if(!collision)
-		for(int i=0; i<snake.length(); i++){
-			if(x == snake[i].x() && y == snake[i].y()){
-				collision = true;
-				break;
-			}
-		}
-		
-		if(!collision)
-		for(int i=0; i<bricks.length(); i++){
-			if(x == bricks[i].x() && y == bricks[i].y()){
-				collision = true;
-				break;
-			}
+		// check random position against snake, bricks and bombs
+		if(snake.contains(p) ||
+				bricks.contains(p) ||
+				bombs.contains(p)){
+			continue;
 		}
 		
 		// search for neigbours
 		int found=0;
 		const int r=1; // search radius
 		
-		if(!collision)
 		for(int i=-r; i<=r; i++){
 			for(int j=-r; j<=r; j++){
 				if(i!=0 && j!=0){ // skip center and diagonals
-					if(bricks.contains(QPoint(x+i,y+j))){
+					if(bricks.contains(QPoint(p.x()+i,p.y()+j))){
 						found++;
 					}
 				}
 			}
 		}
 		
-		
-		
-		if(!collision && 
-				(found >= 1 || neighbourSearchTrials<=0) ){
-			bricks.append(QPoint(x,y));
-			added=true;
+		if(found >= 1 || neighbourSearchTrials<=0 ){
+			bricks.append(p);
+			break;
 		}
 		neighbourSearchTrials--;
 	}
@@ -184,43 +162,17 @@ void Scene::addBrick()
 
 void Scene::addBomb()
 {
-	bool added = false;
-	bool collision = false;
-
-	while(!added){
-		collision = false;
-		int x = rand()%sizeX;
-		int y = rand()%sizeY;
+	int retries = 1000;
+	while(retries--){
+		QPoint p((rand()%(SizeX-1))+1, 
+				 (rand()%(SizeY-1))+1);
 		
-		
-		// check random position against snake and bricks
-		if(!collision)
-		for(int i=0; i<snake.length(); i++){
-			if(x == snake[i].x() && y == snake[i].y()){
-				collision = true;
-				break;
-			}
-		}
-		
-		if(!collision)
-		for(int i=0; i<bricks.length(); i++){
-			if(x == bricks[i].x() && y == bricks[i].y()){
-				collision = true;
-				break;
-			}
-		}
-		
-		if(!collision)
-		for(int i=0; i<bombs.length(); i++){
-			if(x == bombs[i].x() && y == bombs[i].y()){
-				collision = true;
-				break;
-			}
-		}
-		
-		if(!collision){
-			bombs.append(QPoint(x,y));
-			added=true;
+		// check random position against snake, bricks and bombs
+		if(snake.contains(p) == false &&
+				bricks.contains(p) == false &&
+				bombs.contains(p) == false){
+			bombs.append(p);
+			break;
 		}
 	}
 }
@@ -232,7 +184,7 @@ void Scene::triggerBomb()
 	if(bombsCounter > 0){
 		for(int i=0; i<bricks.length(); i++){
 			QPoint p = bricks[i];
-			if(p.x() == 0 || p.x() == sizeX || p.y()==0 || p.y()==sizeY){
+			if(p.x() == 0 || p.x() == SizeX || p.y()==0 || p.y()==SizeY){
 				continue;
 			}
 			
@@ -265,7 +217,7 @@ void Scene::paint()
 			// stripes of the snake
 			brush = QBrush(QColor(255,220,220));
 		}
-		auto item = new QGraphicsEllipseItem(boxSize*p.x(), boxSize*p.y(), boxSize, boxSize);
+		auto item = new QGraphicsEllipseItem(BoxSize*p.x(), BoxSize*p.y(), BoxSize, BoxSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
@@ -275,7 +227,7 @@ void Scene::paint()
 		QPoint p = bricks[i];
 		QBrush brush = QBrush(Qt::gray);
 		
-		auto item = new QGraphicsRectItem(boxSize*p.x(), boxSize*p.y(), boxSize, boxSize);
+		auto item = new QGraphicsRectItem(BoxSize*p.x(), BoxSize*p.y(), BoxSize, BoxSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
@@ -285,7 +237,7 @@ void Scene::paint()
 		QPoint p = bombs[i];
 		QBrush brush = QBrush(QColor(150,150,255));
 		
-		auto item = new QGraphicsEllipseItem(boxSize*p.x(), boxSize*p.y(), boxSize, boxSize);
+		auto item = new QGraphicsEllipseItem(BoxSize*p.x(), BoxSize*p.y(), BoxSize, BoxSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
@@ -293,18 +245,36 @@ void Scene::paint()
 	// explosion radius
 	if(lastBomb.isNull() == false){
 		QBrush brush(QBrush(QColor(150,150,255)));
-		int d = boxSize*BombRadius;
-		auto item = new QGraphicsEllipseItem(boxSize*lastBomb.x()-d, boxSize*lastBomb.y()-d, 
-											 boxSize*2*BombRadius, boxSize*2*BombRadius);
+		int d = BoxSize*BombRadius;
+		auto item = new QGraphicsEllipseItem(BoxSize*lastBomb.x()-d, BoxSize*lastBomb.y()-d, 
+											 BoxSize*2*BombRadius, BoxSize*2*BombRadius);
 		item->setBrush(brush);
 		addItem(item);
 		lastBomb = QPoint();
+	}
+	
+	// Print Score
+	if(dead){
+		QBrush brush(Qt::white);
+		auto item = new QGraphicsSimpleTextItem(QString("Score %1").arg(length()));
+		item->setBrush(brush);
+		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
+		QRectF bR = item->sceneBoundingRect();
+		item->setPos(QPoint(BoxSize*SizeX/2 - int(bR.width()/2), 
+							BoxSize*SizeY/2 - int(bR.height()/2)));
+		addItem(item);
 	}
 }
 
 int Scene::length()
 {
 	return snake.length();
+}
+
+void Scene::die()
+{
+	dead = true;
+	paint();
 }
 
 bool Scene::isDead()

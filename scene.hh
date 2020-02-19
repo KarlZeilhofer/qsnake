@@ -19,6 +19,7 @@ public:
 	void triggerBomb();
 	void paint();
 	int length();
+	void die();
 	bool isDead();
 	
 public slots:
@@ -33,11 +34,14 @@ private:
 	QList<QPoint> bricks; // filled randomly with obstackles
 	QList<QPoint> bombs; // "food" which can be triggerd if needed in a tight situation
 	QPoint lastBomb;
+
 	const int BombRadius=10;
-	
-	const int sizeX = 100; // boxes
-	const int sizeY = 50; // boxes
-	const int boxSize = 15; // pixel
+	const int SizeX = 100; // boxes
+	const int SizeY = 50; // boxes
+	const int BoxSize = 15; // pixel
+	const int BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
+	const int HeadClearance = 7; // zone around head, forbidden for new bricks
+	const int InitialLength = 15;
 	
 	Direction currentHeadDirection=Right;
 	QList<Direction> steerQueue;
