@@ -9,6 +9,9 @@ a very simple game written in Qt5 based on these rules:
 * every 100 steps a bomb appears
 * bombs can be collected and used with the spacebar
 * bombs have a radius of 10 units
+* 
+![](screenshots/2020-02-19_001.png)
+
 
 # Controls
 * arrow keys
