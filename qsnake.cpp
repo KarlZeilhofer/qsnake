@@ -36,6 +36,8 @@ QSnake::QSnake(QWidget *parent)
 	
 	score = new QLabel("Score: 0", this);
 	ui->statusbar->addWidget(score);
+	
+	setWindowTitle(QApplication::applicationName() + " V" + QApplication::applicationVersion());
 	showMaximized();
 }
 
