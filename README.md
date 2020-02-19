@@ -12,6 +12,9 @@ a very simple game written in Qt5 based on these rules:
 
 ![](screenshots/2020-02-19_001.png)
 
+# Video Demo
+[![QSnake Gameplay Demo](https://img.youtube.com/vi/6lUHXIsVJDg/0.jpg)](https://www.youtube.com/watch?v=6lUHXIsVJDg "QSnake Gameplay Demo")
+
 
 # Controls
 * arrow keys
