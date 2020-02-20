@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	QSettings set;
 	
-	Difficulty d = Difficulty(set.value("difficulty", 0).toInt());
+	Difficulty d = Difficulty(set.value("difficulty", 2).toInt());
 	
 	timer = new QTimer(this);
 	connect(timer, SIGNAL(timeout()), this, SLOT(timeStep()));
@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->statusbar->addWidget(score);
 	
 	setWindowTitle(QApplication::applicationName() + " V" + QApplication::applicationVersion());
-	showFullScreen();
+	showMaximized();
 	
 	timer->start();
 }

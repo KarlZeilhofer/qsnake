@@ -1,6 +1,9 @@
 Changelog of QSnake
 ===========================
 
+# v0.0.5
+* add help texts when died and paused
+
 # v0.0.4
 * improve resume on keypress
 * respect grow and bomb interval

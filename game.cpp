@@ -18,9 +18,6 @@ Game::Game()
 	setDefaults();
 	QSettings set;
 	
-	GrowInterval = 10; // grow snake every 10 steps
-	BombInterval = 100; // spawn a bomb on the field every 100 steps
-	
 	valueNames << "BombRadius";
 	valueNames << "SizeX";
 	valueNames << "SizeY";
@@ -296,7 +293,7 @@ void Game::paint()
 		}
 		auto item = new QGraphicsEllipseItem(BrickSize*(p.x()-0.15), BrickSize*(p.y()-0.15), BrickSize*1.3, BrickSize*1.3);
 		item->setBrush(brush);
-		item->setPen(QPen(QBrush(Qt::black), 3));
+		item->setPen(QPen(QBrush(Qt::black), BrickSize/6.0));
 		addItem(item);
 	}
 	
@@ -319,22 +316,45 @@ void Game::paint()
 		}
 	}
 	
+	// dark overlay
 	if(dead || paused){
 		QBrush brush(QColor(0,0,0,128)); // transparent black as text background color
 		auto rect = new QGraphicsRectItem(0,0,BrickSize*(SizeX+1), BrickSize*(SizeY+1));
 		rect->setBrush(brush);
 		addItem(rect);
+		
+		{
+			auto brush = QBrush(TextColor);
+			auto item = new QGraphicsSimpleTextItem(QString("Press any cursor key to start\n        ESC to quit"));
+			item->setBrush(brush);
+			item->setFont(QFont("DejaVu Sans Mono, Bold", 16, 5));
+			QRectF bR = item->sceneBoundingRect();
+			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), BrickSize*(SizeY-1) - bR.height()));
+			addItem(item);
+		}
+		
 	}
 	// Print Score
 	if(dead){
-		auto brush = QBrush(TextColor);
-		auto item = new QGraphicsSimpleTextItem(QString("SCORE %1").arg(score()));
-		item->setBrush(brush);
-		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
-		QRectF bR = item->sceneBoundingRect();
-		item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), 
-							BrickSize*SizeY/2 - int(bR.height()/2)));
-		addItem(item);
+		{
+			auto brush = QBrush(TextColor);
+			auto item = new QGraphicsSimpleTextItem(QString("SCORE %1").arg(score()));
+			item->setBrush(brush);
+			item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
+			QRectF bR = item->sceneBoundingRect();
+			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), 
+								BrickSize*SizeY/2 - int(bR.height()/2)));
+			addItem(item);
+		}
+		{
+			auto brush = QBrush(TextColor);
+			auto item = new QGraphicsSimpleTextItem(QString("Press R to restart\n    ESC to quit"));
+			item->setBrush(brush);
+			item->setFont(QFont("DejaVu Sans Mono, Bold", 16, 5));
+			QRectF bR = item->sceneBoundingRect();
+			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), BrickSize*(SizeY-1) - bR.height()));
+			addItem(item);
+		}
 	}
 	
 	// Print Pause
@@ -398,12 +418,12 @@ void Game::setSelfCollision(bool flag)
 void Game::setDefaults()
 {
 	BombRadius=10;
-	SizeX = 100; // boxes
-	SizeY = 60; // boxes
-	BrickSize = 8; // pixel
+	SizeX = 60; // boxes
+	SizeY = 40; // boxes
+	BrickSize = 14; // pixel
 	BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
 	HeadClearance = 7; // zone around head, forbidden for new bricks
 	InitialLength = 10;	
 	GrowInterval = 10; // grow snake every 10 steps
-	BombInterval = 100; // spawn a bomb on the field every 100 steps
+	BombInterval = 30; // spawn a bomb on the field every 100 steps
 }
