@@ -3,6 +3,8 @@ Changelog of QSnake
 
 # v0.0.5
 * add help texts when died and paused
+* bugfix of help texts
+* immediate restart on key R
 
 # v0.0.4
 * improve resume on keypress

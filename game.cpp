@@ -323,16 +323,6 @@ void Game::paint()
 		rect->setBrush(brush);
 		addItem(rect);
 		
-		{
-			auto brush = QBrush(TextColor);
-			auto item = new QGraphicsSimpleTextItem(QString("Press any cursor key to start\n        ESC to quit"));
-			item->setBrush(brush);
-			item->setFont(QFont("DejaVu Sans Mono, Bold", 16, 5));
-			QRectF bR = item->sceneBoundingRect();
-			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), BrickSize*(SizeY-1) - bR.height()));
-			addItem(item);
-		}
-		
 	}
 	// Print Score
 	if(dead){
@@ -367,6 +357,16 @@ void Game::paint()
 		item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), 
 							BrickSize*SizeY/2 - int(bR.height()/2)));
 		addItem(item);
+		
+		{
+			auto brush = QBrush(TextColor);
+			auto item = new QGraphicsSimpleTextItem(QString("Press any cursor key to start\n        ESC to quit"));
+			item->setBrush(brush);
+			item->setFont(QFont("DejaVu Sans Mono, Bold", 16, 5));
+			QRectF bR = item->sceneBoundingRect();
+			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), BrickSize*(SizeY-1) - bR.height()));
+			addItem(item);
+		}
 	}
 }
 
@@ -389,6 +389,11 @@ void Game::togglePause()
 		paused = !paused;
 	}
 	paint();
+}
+
+void Game::setPause(bool flag)
+{
+	paused = flag;
 }
 
 bool Game::isDead()

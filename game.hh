@@ -21,6 +21,7 @@ public:
 	int score();
 	void die();
 	void togglePause();
+	void setPause(bool flag);
 	bool isDead();
 	void restoreDefaults();
 	void setSelfCollision(bool flag);

@@ -88,6 +88,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		}else if( keyEvent->key() == Qt::Key_R )
 		{
 			game->restart();
+			game->setPause(false);
 			return true;
 		}else if( keyEvent->key() == Qt::Key_Space )
 		{
