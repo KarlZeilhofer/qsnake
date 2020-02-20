@@ -63,7 +63,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
 	
 	if(event->type() == QEvent::KeyPress){
-		qDebug() << "key event";
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 		
 		if( keyEvent->key() == Qt::Key_Up )

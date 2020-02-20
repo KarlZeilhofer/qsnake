@@ -340,7 +340,7 @@ void Game::paint()
 	// Print Pause
 	if(paused && !dead){
 		auto brush = QBrush(TextColor);
-		auto item = new QGraphicsSimpleTextItem(QString("PAUSED").arg(score()));
+		auto item = new QGraphicsSimpleTextItem(QString("PAUSED"));
 		item->setBrush(brush);
 		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
 		QRectF bR = item->sceneBoundingRect();
