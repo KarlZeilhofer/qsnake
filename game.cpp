@@ -2,6 +2,7 @@
 
 #include <qgraphicsitem.h>
 #include <QSettings>
+#include <math.h>
 
 Game::Game()
 {
@@ -37,75 +38,88 @@ Game::Game()
 	values.append(&InitialLength);
 	values.append(&GrowInterval);
 	values.append(&BombInterval);
-
+	values.append(&BrickInterval);
+	
 	for(int i=0; i<valueNames.length(); i++){
 		if(set.contains(valueNames[i])){
-			*(values[i]) = set.value(valueNames[i]).toInt();
+			*(values[i]) = set.value(valueNames[i]).toDouble();
 		}else{
 			set.setValue(valueNames[i], *(values[i]));
 		}
 	}
 	
+	restoreDefaults();
+	
 	restart();
 }
 
-void Game::moveSnake()
+void Game::timeStep(qreal dt)
 {
 	if(dead || paused){
 		paint();
 		return;
 	}
 	
+	// process steering
+	if(currentSteering == Left){
+		currentHeadDirection += 360*dt;
+		if(currentHeadDirection >= 360){
+			currentHeadDirection -= 360;
+		}
+	}else if(currentSteering == Right){
+		currentHeadDirection -= 360*dt;
+		if(currentHeadDirection<0){
+			currentHeadDirection+=360;
+		}
+	}
+	
 	static int cnt=0;
 	
-	if(steerQueue.empty() == false){
-		currentHeadDirection = steerQueue.first();
-		steerQueue.removeFirst();
-	}
-	
-	QPoint newHead;
-	switch(currentHeadDirection){
-	case Up:
-		newHead.setX(snake.first().x());
-		newHead.setY(snake.first().y()-1);
-		break;
-	case Down:
-		newHead.setX(snake.first().x());
-		newHead.setY(snake.first().y()+1);
-		break;
-	case Left:
-		newHead.setX(snake.first().x()-1);
-		newHead.setY(snake.first().y());
-		break;
-	case Right:
-		newHead.setX(snake.first().x()+1);
-		newHead.setY(snake.first().y());
-		break;
-	}
+	QPointF newHead;
+	qreal dx = speed*dt*cos(currentHeadDirection*M_PI/180.0);
+	qreal dy = -speed*dt*sin(currentHeadDirection*M_PI/180.0);
+	newHead = snake.first() + QPointF(dx,dy);
 	
 	
 	// check for collision
-	if((snake.contains(newHead) && selfCollision) ||
-			bricks.contains(newHead)){
-		die();
-		return;
-	}
+//	if((snake.contains(newHead) && selfCollision) ||
+//			bricks.contains(newHead)){
+//		die();
+//		return;
+//	}
 	
-	snake.insert(0, newHead);
-	if(cnt%GrowInterval != 0){
+	
+	static qreal brickTimer=0;
+	brickTimer += dt;
+	if(brickTimer >= BrickInterval){
+		brickTimer = 0;
+		addBrick();
+	}
+
+	snake.insert(0, newHead);	
+	static qreal growTimer=0;
+	growTimer += dt;
+	if(growTimer >= GrowInterval){
+		growTimer = 0;
+	}else{
 		snake.removeLast();
 	}
-	addBrick();
-	if(cnt%BombInterval == 0){
+	
+	static qreal bombTimer=0;
+	bombTimer += dt;
+	if(bombTimer >= BombInterval){
+		bombTimer = 0;
 		addBomb();
 	}
 	
+
+	
 	
 	//   with bombs
-	if(bombs.contains(newHead)){
-		bombsCounter++;
-		bombs.removeOne(newHead);
-	}
+//	if(bombs.contains(newHead)){
+//		bombsCounter++;
+//		bombs.removeOne(newHead);
+//	}
 	
 	
 	paint();
@@ -119,22 +133,8 @@ void Game::changeDirection(Game::Direction dir)
 		togglePause();
 	}
 	
-	Direction lastDir;
-	if(steerQueue.length() >= 1){
-		lastDir = steerQueue.last();
-	}else{
-		lastDir = currentHeadDirection;
-	}
+	currentSteering = dir;
 	
-	if((dir == Left && lastDir != Right) ||
-			(dir == Right && lastDir != Left) ||
-			(dir == Up && lastDir != Down) ||
-			(dir == Down && lastDir != Up)
-			){
-		if(dir != lastDir){
-			steerQueue.append(dir);
-		}
-	}
 }
 
 void Game::restart()
@@ -150,8 +150,7 @@ void Game::restart()
 		snake.insert(0,QPoint(i+1,SizeY/2));
 	}
 	
-	steerQueue.clear();
-	steerQueue.append(Right);
+
 	bricks.clear();
 	for(int x=0; x<SizeX; x++){
 		bricks.insert(0,QPoint(x,0));
@@ -170,8 +169,8 @@ void Game::addBrick()
 	
 	int retries = 1000;
 	while(retries--){
-		QPoint p((rand()%(SizeX-1))+1, 
-				 (rand()%(SizeY-1))+1);
+		QPoint p((rand()%(int(SizeX)-1))+1, 
+				 (rand()%(int(SizeY)-1))+1);
 		
 		// check for enough distance to head, to avoid unfair obstacles
 		if(abs(p.x()-snake.first().x()) <= HeadClearance &&
@@ -212,8 +211,8 @@ void Game::addBomb()
 {
 	int retries = 1000;
 	while(retries--){
-		QPoint p((rand()%(SizeX-1))+1, 
-				 (rand()%(SizeY-1))+1);
+		QPoint p((rand()%(int(SizeX)-1))+1, 
+				 (rand()%(int(SizeY)-1))+1);
 		
 		// check random position against snake, bricks and bombs
 		if(snake.contains(p) == false &&
@@ -247,7 +246,7 @@ void Game::triggerBomb()
 			}
 		}		
 		bombsCounter--;
-		lastBomb = snake.first();
+		lastBomb = snake.first().toPoint();
 		bombFadoutCounter = BombFadout;
 	}
 	paint(); // immediately paint the bomb explosion
@@ -279,7 +278,7 @@ void Game::paint()
 	
 	// Snake
 	for(int i=snake.length()-1; i>=0; i--){
-		QPoint p = snake[i];
+		QPointF p = snake[i];
 		QBrush brush(SnakeColor1);
 		
 		if(i==0){
@@ -291,9 +290,8 @@ void Game::paint()
 			// stripes of the snake
 			brush = QBrush(SnakeColor2);
 		}
-		auto item = new QGraphicsEllipseItem(BrickSize*(p.x()-0.15), BrickSize*(p.y()-0.15), BrickSize*1.3, BrickSize*1.3);
+		auto item = new QGraphicsEllipseItem(p.x(), p.y(), SnakeSize*1.3, SnakeSize*1.3);
 		item->setBrush(brush);
-		item->setPen(QPen(QBrush(Qt::black), BrickSize/6.0));
 		addItem(item);
 	}
 	
@@ -425,10 +423,12 @@ void Game::setDefaults()
 	BombRadius=10;
 	SizeX = 60; // boxes
 	SizeY = 40; // boxes
-	BrickSize = 14; // pixel
+	BrickSize = 15; // pixel
+	SnakeSize = 15;
 	BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
 	HeadClearance = 7; // zone around head, forbidden for new bricks
 	InitialLength = 10;	
-	GrowInterval = 10; // grow snake every 10 steps
-	BombInterval = 30; // spawn a bomb on the field every 100 steps
+	GrowInterval = 3; // grow snake every 10 steps
+	BombInterval = 10; // spawn a bomb on the field every 100 steps
+	BrickInterval = 1.0; // a brick every second
 }

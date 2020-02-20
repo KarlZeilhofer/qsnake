@@ -6,12 +6,12 @@
 class Game : public QGraphicsScene
 {
 public:
-	enum Direction{Up, Down, Left, Right};
+	enum Direction{Straight, Left, Right};
 	
 public:
 	Game();
 	
-	void moveSnake();
+	void timeStep(qreal dt);
 	void changeDirection(Direction dir);
 	void restart();
 	void addBrick();
@@ -33,22 +33,25 @@ private:
 	
 	// list of snake points in box units (allways positive, >=0)
 	// head is first element
-	QList<QPoint> snake; 
+	QList<QPointF> snake; 
 	bool dead = false;
 	
 	QList<QPoint> bricks; // filled randomly with obstackles
 	QList<QPoint> bombs; // "food" which can be triggerd if needed in a tight situation
 	QPoint lastBomb;
 
-	int BombRadius;
-	int SizeX; // boxes
-	int SizeY; // boxes
-	int BrickSize;// pixel
-	int BrickAttraction; // number of retries for finding neighbours, before settling into nowhere
-	int HeadClearance; // zone around head, forbidden for new bricks
-	int InitialLength;
-	int GrowInterval;
-	int BombInterval;
+	// settings
+	qreal BombRadius;
+	qreal SizeX; // pixel
+	qreal SizeY; // pixel
+	qreal BrickSize;// pixel
+	qreal SnakeSize;// pixel
+	qreal BrickAttraction; // number of retries for finding neighbours, before settling into nowhere
+	qreal HeadClearance; // zone around head, forbidden for new bricks
+	qreal InitialLength;
+	qreal GrowInterval; // seconds
+	qreal BombInterval; // seconds
+	qreal BrickInterval; // seconds
 	
 	QColor BombColor;
 	QColor SnakeColor1;
@@ -59,17 +62,18 @@ private:
 	QColor TextColor;
 	
 	QStringList valueNames;
-	QList<int*> values;
+	QList<qreal*> values;
 	
-	Direction currentHeadDirection=Right;
-	QList<Direction> steerQueue;
+	qreal currentHeadDirection=0; // degrees, counter clock wise, starting from right
+	Direction currentSteering = Straight;
+
 	int bombsCounter=0;
 	
 	bool paused = false;
 	bool selfCollision = false; 
 	const int BombFadout = 5;
 	int bombFadoutCounter=BombFadout;
-
+	qreal speed = 200; // px/s
 };
 
 #endif // SCENE_HH

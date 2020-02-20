@@ -55,24 +55,23 @@ MainWindow::~MainWindow()
 
 void MainWindow::timeStep()
 {
-	game->moveSnake();	
+	game->timeStep(timer->interval()*0.001);	
 	setScore();
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-	
 	if(event->type() == QEvent::KeyPress){
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-		
+		if(keyEvent->isAutoRepeat()){
+			return true; // consume event
+		}
 		if( keyEvent->key() == Qt::Key_Up )
 		{
-			game->changeDirection(Game::Up);
-			return true;
+			return true; // consume event
 		}else 	if( keyEvent->key() == Qt::Key_Down )
 		{
-			game->changeDirection(Game::Down);
-			return true;
+			return false;
 		}else 	if( keyEvent->key() == Qt::Key_Left )
 		{
 			game->changeDirection(Game::Left);
@@ -105,6 +104,25 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			return true;
 		}
 	}
+	
+	if(event->type() == QEvent::KeyRelease){
+		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+		
+		if(keyEvent->isAutoRepeat()){
+			return false;
+		}
+		
+		if( keyEvent->key() == Qt::Key_Left )
+		{
+			game->changeDirection(Game::Straight);
+			return true;
+		}else 	if( keyEvent->key() == Qt::Key_Right )
+		{
+			game->changeDirection(Game::Straight);
+			return true;
+		}
+	}
+	
 	return qApp->eventFilter( watched, event );
 }
 
@@ -147,7 +165,7 @@ void MainWindow::setDifficulty(MainWindow::Difficulty d)
 		ui->actionExtreme->setChecked(true);
 		break;
 	}
-	timer->setInterval(delay_ms);
+	timer->setInterval(33);
 	
 	set.setValue("difficulty", int(d));
 }
