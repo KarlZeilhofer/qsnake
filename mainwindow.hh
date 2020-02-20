@@ -33,6 +33,8 @@ private slots:
 	
 	void on_actionRestore_Defaults_triggered();
 	
+	void on_actionselfcollision_triggered(bool checked);
+	
 private:
 	enum Difficulty{Easy, Medium, Hard, Extreme};
 	

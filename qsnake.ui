@@ -50,6 +50,7 @@
      <string>Settings</string>
     </property>
     <addaction name="actionRestore_Defaults"/>
+    <addaction name="actionselfcollision"/>
    </widget>
    <addaction name="menuDifficulty"/>
    <addaction name="menuSettings"/>
@@ -93,6 +94,17 @@
   <action name="actionRestore_Defaults">
    <property name="text">
     <string>Restore Defaults</string>
+   </property>
+  </action>
+  <action name="actionselfcollision">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Selfcollision</string>
    </property>
   </action>
  </widget>

@@ -32,7 +32,9 @@ MainWindow::MainWindow(QWidget *parent)
 	timer = new QTimer(this);
 	connect(timer, SIGNAL(timeout()), this, SLOT(timeStep()));
 	setDifficulty(d);
-	timer->start();
+
+	ui->actionselfcollision->setChecked(set.value("selfCollision", 1).toInt());
+	game->setSelfCollision(ui->actionselfcollision->isChecked());
 	
 	// catch all events by our own eventFilter()
 	qApp->installEventFilter(this);
@@ -42,6 +44,8 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	setWindowTitle(QApplication::applicationName() + " V" + QApplication::applicationVersion());
 	showFullScreen();
+	
+	timer->start();
 }
 
 MainWindow::~MainWindow()
@@ -82,15 +86,13 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		{
 			game->togglePause();
 			return true;
+		}else if( keyEvent->key() == Qt::Key_R )
+		{
+			game->restart();
+			return true;
 		}else if( keyEvent->key() == Qt::Key_Space )
 		{
-			if(game->isDead()){
-				qDebug() << "reset()";
-				game->restart();
-			}else {
-				game->triggerBomb();
-			}
-
+			game->triggerBomb();
 			return true;
 		}else if( keyEvent->key() == Qt::Key_0 )
 		{
@@ -175,4 +177,11 @@ void MainWindow::on_actionExtreme_triggered()
 void MainWindow::on_actionRestore_Defaults_triggered()
 {
     game->restoreDefaults();
+}
+
+void MainWindow::on_actionselfcollision_triggered(bool checked)
+{
+    game->setSelfCollision(checked);
+	QSettings set;
+	set.setValue("selfCollision", checked?1:0);
 }

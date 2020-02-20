@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 	a.setApplicationName("QSnake");
-	a.setApplicationVersion("0.0.3");
+	a.setApplicationVersion("0.0.4");
 	a.setOrganizationName("KarlZeilhofer");
 	a.setOrganizationDomain("zeilhofer.co.at");
 	MainWindow w;

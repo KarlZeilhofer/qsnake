@@ -55,6 +55,7 @@ Game::Game()
 void Game::moveSnake()
 {
 	if(dead || paused){
+		paint();
 		return;
 	}
 	
@@ -87,7 +88,7 @@ void Game::moveSnake()
 	
 	
 	// check for collision
-	if(snake.contains(newHead) ||
+	if((snake.contains(newHead) && selfCollision) ||
 			bricks.contains(newHead)){
 		die();
 		return;
@@ -144,6 +145,7 @@ void Game::restart()
 	dead = false;
 	snake.clear();
 	bombsCounter = 0;
+	bombFadoutCounter=BombFadout;
 	bombs.clear();
 	lastBomb = QPoint();
 	
@@ -162,7 +164,7 @@ void Game::restart()
 		bricks.insert(0,QPoint(0,y));
 		bricks.insert(0,QPoint(SizeX,y));
 	}
-	paused = false;
+	paused = true;
 }
 
 void Game::addBrick()
@@ -228,9 +230,8 @@ void Game::addBomb()
 
 void Game::triggerBomb()
 {
-	if(paused){
-		togglePause();
-	}
+	if(dead || paused)
+		return;
 	
 	int r=BombRadius;
 	
@@ -250,30 +251,14 @@ void Game::triggerBomb()
 		}		
 		bombsCounter--;
 		lastBomb = snake.first();
+		bombFadoutCounter = BombFadout;
 	}
+	paint(); // immediately paint the bomb explosion
 }
 
 void Game::paint()
 {
 	clear();
-	
-	// Snake
-	for(int i=0; i<snake.length(); i++){
-		QPoint p = snake[i];
-		QBrush brush(SnakeColor1);
-		if(i==0){
-			brush = QBrush(SnakeHeadColor);
-		}else if(i <= bombsCounter){
-			// collected bombs
-			brush = QBrush(BombColor);
-		}else if((i/10)%2 == 0){
-			// stripes of the snake
-			brush = QBrush(SnakeColor2);
-		}
-		auto item = new QGraphicsEllipseItem(BrickSize*p.x(), BrickSize*p.y(), BrickSize, BrickSize);
-		item->setBrush(brush);
-		addItem(item);
-	}
 	
 	// Bricks
 	for(int i=0; i<bricks.length(); i++){
@@ -295,10 +280,30 @@ void Game::paint()
 		addItem(item);
 	}
 	
+	// Snake
+	for(int i=snake.length()-1; i>=0; i--){
+		QPoint p = snake[i];
+		QBrush brush(SnakeColor1);
+		
+		if(i==0){
+			brush = QBrush(SnakeHeadColor);
+		}else if(i <= bombsCounter){
+			// collected bombs
+			brush = QBrush(BombColor);
+		}else if((i/10)%2 == 0){
+			// stripes of the snake
+			brush = QBrush(SnakeColor2);
+		}
+		auto item = new QGraphicsEllipseItem(BrickSize*(p.x()-0.15), BrickSize*(p.y()-0.15), BrickSize*1.3, BrickSize*1.3);
+		item->setBrush(brush);
+		item->setPen(QPen(QBrush(Qt::black), 3));
+		addItem(item);
+	}
+	
 	// explosion radius
 	if(lastBomb.isNull() == false){
 		QColor c = BombColor;
-		c.setAlpha(128);
+		c.setAlpha(128*bombFadoutCounter/BombFadout);
 		QBrush brush(c);
 		
 		int d = BrickSize*BombRadius;
@@ -306,7 +311,12 @@ void Game::paint()
 											 BrickSize*2*BombRadius, BrickSize*2*BombRadius);
 		item->setBrush(brush);
 		addItem(item);
-		lastBomb = QPoint();
+		bombFadoutCounter--;
+		
+		if(bombFadoutCounter == 0){
+			lastBomb = QPoint();
+			bombFadoutCounter = BombFadout;
+		}
 	}
 	
 	if(dead || paused){
@@ -378,6 +388,11 @@ void Game::restoreDefaults()
 	}
 	
 	restart();
+}
+
+void Game::setSelfCollision(bool flag)
+{
+	selfCollision = flag;
 }
 
 void Game::setDefaults()

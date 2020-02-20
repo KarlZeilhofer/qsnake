@@ -23,6 +23,7 @@ public:
 	void togglePause();
 	bool isDead();
 	void restoreDefaults();
+	void setSelfCollision(bool flag);
 	
 public slots:
 	
@@ -64,6 +65,10 @@ private:
 	int bombsCounter=0;
 	
 	bool paused = false;
+	bool selfCollision = false; 
+	const int BombFadout = 5;
+	int bombFadoutCounter=BombFadout;
+
 };
 
 #endif // SCENE_HH
