@@ -18,11 +18,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     game.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    myfastergraphicsview.cpp
 
 HEADERS += \
     game.hh \
-    mainwindow.hh
+    mainwindow.hh \
+    myfastergraphicsview.hh
 
 FORMS += \
     qsnake.ui

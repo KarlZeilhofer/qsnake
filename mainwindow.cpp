@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
 	game = new Game();
 	ui->view->setScene(game);
 	ui->view->setRenderHint(QPainter::Antialiasing);
-	ui->view->setViewport(new QGLWidget(this));
+	//ui->view->setViewport(new QGLWidget(this));
 	
 	srand(uint32_t(time(nullptr)));
 	

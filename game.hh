@@ -76,7 +76,7 @@ private:
 	bool selfCollision = false; 
 	const int BombFadeout = 20;
 	int bombFadoutCounter=BombFadeout;
-	qreal speed = 100; // px/s
+	qreal speed = 150; // px/s
 	bool boost = false;
 };
 

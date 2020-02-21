@@ -457,7 +457,7 @@ void Game::setDefaults()
 	BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
 	HeadClearance = 8; // zone around head, forbidden for new bricks
 	InitialLength = 70;	
-	GrowInterval = 0.1; // grow snake every n seconds
+	GrowInterval = 0.2; // grow snake every n seconds
 	BombInterval = 10.0; // spawn a bomb on the field every n seconds
 	BrickInterval = 0.40; // a brick every second
 }
