@@ -82,9 +82,11 @@ void Game::timeStep(qreal dt)
 	qreal dx = s*dt*cos(currentHeadDirection*M_PI/180.0);
 	qreal dy = -s*dt*sin(currentHeadDirection*M_PI/180.0);
 	QPointF d(dx,dy);
-	if((cnt/8)%2 == 0){
-		d *= 0.5; // set to zero for creep simulation
-	}
+	
+	// TODO: good creep simulation
+//	if((cnt/snake.length())%2 == 0){
+//		d *= 0.5; // creep simulation
+//	}
 	
 	newHead = snake.first() + d;
 	
@@ -196,7 +198,8 @@ void Game::addBrick()
 				 (rand()%(int(SizeY*BrickSize-BrickSize)))+BrickSize);
 		
 		// check for enough distance to head, to avoid unfair obstacles
-		if(p.x()*p.x() + p.y()*p.y() < (HeadClearance*BrickSize)*(HeadClearance*BrickSize)){
+		QPointF d = p-snake.first();
+		if(d.x()*d.x() + d.y()*d.y() < (HeadClearance*BrickSize)*(HeadClearance*BrickSize)){
 			continue;
 		}
 		
@@ -443,17 +446,17 @@ void Game::setSelfCollision(bool flag)
 
 void Game::setDefaults()
 {
-	ExplosionRadius=12; // brick units
+	ExplosionRadius=7; // brick units
 	SizeX = 60; // brick units
 	SizeY = 40; // brick units
 	BrickSize = 16; // pixels
 	SnakeSize = 16; // pixels
 	BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
-	HeadClearance = 7; // zone around head, forbidden for new bricks
+	HeadClearance = 8; // zone around head, forbidden for new bricks
 	InitialLength = 40;	
-	GrowInterval = 1.0; // grow snake every n seconds
-	BombInterval = 3.0; // spawn a bomb on the field every n seconds
-	BrickInterval = 1.0; // a brick every second
+	GrowInterval = 0.2; // grow snake every n seconds
+	BombInterval = 10.0; // spawn a bomb on the field every n seconds
+	BrickInterval = 0.40; // a brick every second
 }
 
 bool Game::isColliding(QPointF &p1, QPointF &p2, qreal radius)
