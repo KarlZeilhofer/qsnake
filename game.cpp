@@ -3,6 +3,7 @@
 #include <qgraphicsitem.h>
 #include <QSettings>
 #include <math.h>
+#include <QDebug>
 
 Game::Game()
 {
@@ -299,6 +300,8 @@ void Game::paint()
 		addItem(item);
 	}
 	
+	// TODO IMPORTANT: improve painting of snake!
+	// starts to lag at about length 500
 	// Snake
 	for(int i=snake.length()-1; i>=0; i--){
 		QPointF p = snake[i];
@@ -447,14 +450,14 @@ void Game::setSelfCollision(bool flag)
 void Game::setDefaults()
 {
 	ExplosionRadius=7; // brick units
-	SizeX = 60; // brick units
-	SizeY = 40; // brick units
+	SizeX = 100; // brick units
+	SizeY = 60; // brick units
 	BrickSize = 16; // pixels
 	SnakeSize = 16; // pixels
 	BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
 	HeadClearance = 8; // zone around head, forbidden for new bricks
-	InitialLength = 40;	
-	GrowInterval = 0.2; // grow snake every n seconds
+	InitialLength = 70;	
+	GrowInterval = 0.1; // grow snake every n seconds
 	BombInterval = 10.0; // spawn a bomb on the field every n seconds
 	BrickInterval = 0.40; // a brick every second
 }

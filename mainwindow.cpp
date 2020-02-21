@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <QActionGroup>
+#include <QtOpenGL>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -17,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
 	game = new Game();
 	ui->view->setScene(game);
 	ui->view->setRenderHint(QPainter::Antialiasing);
+	ui->view->setViewport(new QGLWidget(this));
 	
 	srand(uint32_t(time(nullptr)));
 	
