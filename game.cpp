@@ -19,7 +19,7 @@ Game::Game()
 	setDefaults();
 	QSettings set;
 	
-	valueNames << "BombRadius";
+	valueNames << "ExplosionRadius";
 	valueNames << "SizeX";
 	valueNames << "SizeY";
 	valueNames << "BrickSize";
@@ -29,7 +29,7 @@ Game::Game()
 	valueNames << "GrowInterval";
 	valueNames << "BombInterval";
 	
-	values.append(&BombRadius);
+	values.append(&ExplosionRadius);
 	values.append(&SizeX);
 	values.append(&SizeY);
 	values.append(&BrickSize);
@@ -48,6 +48,7 @@ Game::Game()
 		}
 	}
 	
+	// TODO remove temporary:
 	restoreDefaults();
 	
 	restart();
@@ -61,13 +62,14 @@ void Game::timeStep(qreal dt)
 	}
 	
 	// process steering
+	qreal roundsPerSecond = 0.6; 
 	if(currentSteering == Left){
-		currentHeadDirection += 360*dt;
+		currentHeadDirection += 360*dt*roundsPerSecond;
 		if(currentHeadDirection >= 360){
 			currentHeadDirection -= 360;
 		}
 	}else if(currentSteering == Right){
-		currentHeadDirection -= 360*dt;
+		currentHeadDirection -= 360*dt*roundsPerSecond;
 		if(currentHeadDirection<0){
 			currentHeadDirection+=360;
 		}
@@ -76,17 +78,33 @@ void Game::timeStep(qreal dt)
 	static int cnt=0;
 	
 	QPointF newHead;
-	qreal dx = speed*dt*cos(currentHeadDirection*M_PI/180.0);
-	qreal dy = -speed*dt*sin(currentHeadDirection*M_PI/180.0);
-	newHead = snake.first() + QPointF(dx,dy);
+	qreal s = speed * (boost?2:1);
+	qreal dx = s*dt*cos(currentHeadDirection*M_PI/180.0);
+	qreal dy = -s*dt*sin(currentHeadDirection*M_PI/180.0);
+	QPointF d(dx,dy);
+	if((cnt/8)%2 == 0){
+		d *= 0.5; // set to zero for creep simulation
+	}
+	
+	newHead = snake.first() + d;
 	
 	
-	// check for collision
-//	if((snake.contains(newHead) && selfCollision) ||
-//			bricks.contains(newHead)){
-//		die();
-//		return;
-//	}
+	// check for self collision
+	if(selfCollision){
+		QList<QPointF> subList = snake.mid(20);
+		if(isColliding(subList, newHead, SnakeSize) >= 0){
+			die();
+			return;
+		}
+	}
+	// collision with bricks:
+	for(int i=0; i<bricks.length(); i++){
+		if(isColliding(bricks, newHead, (SnakeSize/2 + BrickSize/2)*0.8) >= 0){
+			die();
+			return;
+		}
+	}
+
 	
 	
 	static qreal brickTimer=0;
@@ -113,27 +131,32 @@ void Game::timeStep(qreal dt)
 	}
 	
 
-	
-	
-	//   with bombs
-//	if(bombs.contains(newHead)){
-//		bombsCounter++;
-//		bombs.removeOne(newHead);
-//	}
-	
+	// collision with bombs
+	int i = isColliding(bombs, newHead, BrickSize/2+SnakeSize/2);
+	if(i >= 0){
+		bombsCounter++;
+		bombs.removeAt(i);
+	}
+
 	
 	paint();
 	
 	cnt++;
 }
 
-void Game::changeDirection(Game::Direction dir)
+void Game::controlInput(Game::Controlls dir)
 {
 	if(paused){
 		togglePause();
 	}
 	
-	currentSteering = dir;
+	switch(dir){
+	case Boost: boost = true; break;
+	case NormalSpeed: boost = false; break;
+	case Left: 
+	case Right: 
+	case Straight: currentSteering = dir;
+	}
 	
 }
 
@@ -141,62 +164,55 @@ void Game::restart()
 {
 	dead = false;
 	snake.clear();
-	bombsCounter = 0;
-	bombFadoutCounter=BombFadout;
+	bombsCounter = 10;
+	bombFadoutCounter=BombFadeout;
 	bombs.clear();
-	lastBomb = QPoint();
+	lastBomb = QPointF();
+	currentHeadDirection = 0;
 	
 	for(int i=0; i<InitialLength; i++){
-		snake.insert(0,QPoint(i+1,SizeY/2));
+		snake.insert(0,QPointF(SnakeSize*(i+5),BrickSize*SizeY/2));
 	}
 	
-
 	bricks.clear();
-	for(int x=0; x<SizeX; x++){
-		bricks.insert(0,QPoint(x,0));
-		bricks.insert(0,QPoint(x,SizeY));
+	for(int x=0; x<=SizeX; x++){
+		bricks.insert(0,QPointF(x, 0)*BrickSize);
+		bricks.insert(0,QPointF(x, SizeY)*BrickSize);
 	}
-	for(int y=0; y<SizeY; y++){
-		bricks.insert(0,QPoint(0,y));
-		bricks.insert(0,QPoint(SizeX,y));
+	for(int y=1; y<SizeY; y++){
+		bricks.insert(0,QPointF(0,y)*BrickSize);
+		bricks.insert(0,QPointF(SizeX,y)*BrickSize);
 	}
 	paused = true;
 }
 
 void Game::addBrick()
 {
-	int neighbourSearchTrials = BrickAttraction; // countdown for searching neighbours, if zero, we will plant a hermit in the middle of nowhere
+	int neighbourSearchTrials = int(BrickAttraction); // countdown for searching neighbours, if zero, we will plant a hermit in the middle of nowhere
 	
 	int retries = 1000;
 	while(retries--){
-		QPoint p((rand()%(int(SizeX)-1))+1, 
-				 (rand()%(int(SizeY)-1))+1);
+		QPointF p((rand()%(int(SizeX*BrickSize-BrickSize)))+BrickSize, 
+				 (rand()%(int(SizeY*BrickSize-BrickSize)))+BrickSize);
 		
 		// check for enough distance to head, to avoid unfair obstacles
-		if(abs(p.x()-snake.first().x()) <= HeadClearance &&
-				abs(p.y()-snake.first().y()) <= HeadClearance){
+		if(p.x()*p.x() + p.y()*p.y() < (HeadClearance*BrickSize)*(HeadClearance*BrickSize)){
 			continue;
 		}
 		
 		// check random position against snake, bricks and bombs
-		if(snake.contains(p) ||
-				bricks.contains(p) ||
-				bombs.contains(p)){
+		if(isColliding(snake, p, (SnakeSize/2+BrickSize/2)*1.2) >= 0 ||
+				isColliding(bricks, p, BrickSize*1.2) >= 0 ||
+				isColliding(bombs, p, BrickSize*1.2) >= 0){
 			continue;
 		}
 		
 		// search for neigbours
 		int found=0;
-		const int r=1; // search radius
+		qreal r=BrickSize*2; // search radius
 		
-		for(int i=-r; i<=r; i++){
-			for(int j=-r; j<=r; j++){
-				if(i!=0 && j!=0){ // skip center and diagonals
-					if(bricks.contains(QPoint(p.x()+i,p.y()+j))){
-						found++;
-					}
-				}
-			}
+		if(isColliding(bricks, p, r) >= 0){
+			found = 1;
 		}
 		
 		if(found >= 1 || neighbourSearchTrials<=0 ){
@@ -211,16 +227,18 @@ void Game::addBomb()
 {
 	int retries = 1000;
 	while(retries--){
-		QPoint p((rand()%(int(SizeX)-1))+1, 
-				 (rand()%(int(SizeY)-1))+1);
+		QPointF p((rand()%(int(SizeX*BrickSize-BrickSize)))+BrickSize, 
+				 (rand()%(int(SizeY*BrickSize-BrickSize)))+BrickSize);
 		
 		// check random position against snake, bricks and bombs
-		if(snake.contains(p) == false &&
-				bricks.contains(p) == false &&
-				bombs.contains(p) == false){
-			bombs.append(p);
-			break;
+		if(isColliding(snake, p, (SnakeSize/2+BrickSize/2)*1.2) >= 0 ||
+				isColliding(bricks, p, BrickSize*1.2) >= 0 ||
+				isColliding(bombs, p, BrickSize*1.2) >= 0){
+			continue;
 		}
+
+		bombs.append(p);
+		break;
 	}
 }
 
@@ -229,25 +247,25 @@ void Game::triggerBomb()
 	if(dead || paused)
 		return;
 	
-	int r=BombRadius;
+	qreal r=ExplosionRadius;
 	
 	if(bombsCounter > 0){
 		for(int i=0; i<bricks.length(); i++){
-			QPoint p = bricks[i];
-			if(p.x() == 0 || p.x() == SizeX || p.y()==0 || p.y()==SizeY){
+			QPointF p = bricks[i];
+			if(round(p.x()) == 0 || round(p.x()) == SizeX*BrickSize || 
+					round(p.y())==0 || round(p.y())==SizeY*BrickSize){
 				continue;
 			}
 			
-			int dx = snake.first().x() - p.x();
-			int dy = snake.first().y() - p.y();
-			if(dx*dx + dy*dy <= r*r){
+
+			if(isColliding(snake.first(), p, ExplosionRadius*BrickSize)){
 				bricks.removeAt(i);
 				i--;
 			}
 		}		
 		bombsCounter--;
-		lastBomb = snake.first().toPoint();
-		bombFadoutCounter = BombFadout;
+		lastBomb = snake.first();
+		bombFadoutCounter = BombFadeout;
 	}
 	paint(); // immediately paint the bomb explosion
 }
@@ -258,20 +276,22 @@ void Game::paint()
 	
 	// Bricks
 	for(int i=0; i<bricks.length(); i++){
-		QPoint p = bricks[i];
+		QPointF p = bricks[i];
 		QBrush brush = QBrush(BrickColor);
 		
-		auto item = new QGraphicsRectItem(BrickSize*p.x(), BrickSize*p.y(), BrickSize, BrickSize);
+		auto item = new QGraphicsEllipseItem(p.x()-0.5*BrickSize, p.y()-0.5*BrickSize, 
+										  BrickSize, BrickSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
 	
 	// Bombs
 	for(int i=0; i<bombs.length(); i++){
-		QPoint p = bombs[i];
+		QPointF p = bombs[i];
 		QBrush brush = QBrush(BombColor);
 		
-		auto item = new QGraphicsEllipseItem(BrickSize*p.x(), BrickSize*p.y(), BrickSize, BrickSize);
+		auto item = new QGraphicsEllipseItem(p.x()-0.5*BrickSize, p.y()-0.5*BrickSize, 
+											 BrickSize, BrickSize);
 		item->setBrush(brush);
 		addItem(item);
 	}
@@ -290,7 +310,8 @@ void Game::paint()
 			// stripes of the snake
 			brush = QBrush(SnakeColor2);
 		}
-		auto item = new QGraphicsEllipseItem(p.x(), p.y(), SnakeSize*1.3, SnakeSize*1.3);
+		auto item = new QGraphicsEllipseItem(p.x()-0.65*SnakeSize, p.y()-0.65*SnakeSize, 
+											 SnakeSize*1.3, SnakeSize*1.3);
 		item->setBrush(brush);
 		addItem(item);
 	}
@@ -298,26 +319,27 @@ void Game::paint()
 	// explosion radius
 	if(lastBomb.isNull() == false){
 		QColor c = BombColor;
-		c.setAlpha(128*bombFadoutCounter/BombFadout);
+		c.setAlpha(128*bombFadoutCounter/BombFadeout);
 		QBrush brush(c);
 		
-		int d = BrickSize*BombRadius;
-		auto item = new QGraphicsEllipseItem(BrickSize*lastBomb.x()-d, BrickSize*lastBomb.y()-d, 
-											 BrickSize*2*BombRadius, BrickSize*2*BombRadius);
+		qreal d = BrickSize*ExplosionRadius;
+		auto item = new QGraphicsEllipseItem(lastBomb.x()-d, lastBomb.y()-d, 
+											 2*d, 2*d);
 		item->setBrush(brush);
 		addItem(item);
 		bombFadoutCounter--;
 		
 		if(bombFadoutCounter == 0){
-			lastBomb = QPoint();
-			bombFadoutCounter = BombFadout;
+			lastBomb = QPointF();
+			bombFadoutCounter = BombFadeout;
 		}
 	}
 	
 	// dark overlay
 	if(dead || paused){
 		QBrush brush(QColor(0,0,0,128)); // transparent black as text background color
-		auto rect = new QGraphicsRectItem(0,0,BrickSize*(SizeX+1), BrickSize*(SizeY+1));
+		auto rect = new QGraphicsRectItem(-BrickSize*0.5,-BrickSize*0.5,
+										  BrickSize*(SizeX+1), BrickSize*(SizeY+1));
 		rect->setBrush(brush);
 		addItem(rect);
 		
@@ -330,7 +352,7 @@ void Game::paint()
 			item->setBrush(brush);
 			item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
 			QRectF bR = item->sceneBoundingRect();
-			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), 
+			item->setPos(QPointF(BrickSize*SizeX/2 - int(bR.width()/2), 
 								BrickSize*SizeY/2 - int(bR.height()/2)));
 			addItem(item);
 		}
@@ -340,7 +362,7 @@ void Game::paint()
 			item->setBrush(brush);
 			item->setFont(QFont("DejaVu Sans Mono, Bold", 16, 5));
 			QRectF bR = item->sceneBoundingRect();
-			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), BrickSize*(SizeY-1) - bR.height()));
+			item->setPos(QPointF(BrickSize*SizeX/2 - int(bR.width()/2), BrickSize*(SizeY-1) - bR.height()));
 			addItem(item);
 		}
 	}
@@ -352,8 +374,8 @@ void Game::paint()
 		item->setBrush(brush);
 		item->setFont(QFont("DejaVu Sans Mono, Bold", 64, 5));
 		QRectF bR = item->sceneBoundingRect();
-		item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), 
-							BrickSize*SizeY/2 - int(bR.height()/2)));
+		item->setPos(QPointF(BrickSize*SizeX/2 - bR.width()/2, 
+							BrickSize*SizeY/2 - bR.height()/2));
 		addItem(item);
 		
 		{
@@ -362,7 +384,8 @@ void Game::paint()
 			item->setBrush(brush);
 			item->setFont(QFont("DejaVu Sans Mono, Bold", 16, 5));
 			QRectF bR = item->sceneBoundingRect();
-			item->setPos(QPoint(BrickSize*SizeX/2 - int(bR.width()/2), BrickSize*(SizeY-1) - bR.height()));
+			item->setPos(QPointF(BrickSize*SizeX/2 - bR.width()/2, 
+								 BrickSize*(SizeY-1) - bR.height()));
 			addItem(item);
 		}
 	}
@@ -420,15 +443,35 @@ void Game::setSelfCollision(bool flag)
 
 void Game::setDefaults()
 {
-	BombRadius=10;
-	SizeX = 60; // boxes
-	SizeY = 40; // boxes
-	BrickSize = 15; // pixel
-	SnakeSize = 15;
+	ExplosionRadius=12; // brick units
+	SizeX = 60; // brick units
+	SizeY = 40; // brick units
+	BrickSize = 16; // pixels
+	SnakeSize = 16; // pixels
 	BrickAttraction = 15; // number of retries for finding neighbours, before settling into nowhere
 	HeadClearance = 7; // zone around head, forbidden for new bricks
-	InitialLength = 10;	
-	GrowInterval = 3; // grow snake every 10 steps
-	BombInterval = 10; // spawn a bomb on the field every 100 steps
+	InitialLength = 40;	
+	GrowInterval = 1.0; // grow snake every n seconds
+	BombInterval = 3.0; // spawn a bomb on the field every n seconds
 	BrickInterval = 1.0; // a brick every second
+}
+
+bool Game::isColliding(QPointF &p1, QPointF &p2, qreal radius)
+{
+	QPointF d = p1-p2;
+	if(d.x()*d.x() + d.y()*d.y() < radius*radius){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+int Game::isColliding(QList<QPointF> &list, QPointF &p2, qreal radius)
+{
+	for(int i=0; i<list.length(); i++){
+		if(isColliding(list[i], p2, radius)){
+			return i;
+		}
+	}
+	return -1;
 }

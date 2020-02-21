@@ -35,7 +35,7 @@ A typical config could be:
 ```
 [General]
 BombInterval=100
-BombRadius=10
+ExplosionRadius=10
 BoxSize=8
 BrickAttraction=15
 BrickSize=8

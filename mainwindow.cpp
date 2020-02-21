@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->setupUi(this);
 	game = new Game();
 	ui->view->setScene(game);
+	ui->view->setRenderHint(QPainter::Antialiasing);
 	
 	srand(uint32_t(time(nullptr)));
 	
@@ -68,17 +69,18 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 		}
 		if( keyEvent->key() == Qt::Key_Up )
 		{
+			game->controlInput(Game::Boost);
 			return true; // consume event
 		}else 	if( keyEvent->key() == Qt::Key_Down )
 		{
-			return false;
+			return true; // consume event
 		}else 	if( keyEvent->key() == Qt::Key_Left )
 		{
-			game->changeDirection(Game::Left);
+			game->controlInput(Game::Left);
 			return true;
 		}else 	if( keyEvent->key() == Qt::Key_Right )
 		{
-			game->changeDirection(Game::Right);
+			game->controlInput(Game::Right);
 			return true;
 		}else 	if( keyEvent->key() == Qt::Key_P )
 		{
@@ -112,13 +114,17 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			return false;
 		}
 		
-		if( keyEvent->key() == Qt::Key_Left )
+		if( keyEvent->key() == Qt::Key_Up )
 		{
-			game->changeDirection(Game::Straight);
+			game->controlInput(Game::NormalSpeed);
+			return true; // consume event
+		}else if( keyEvent->key() == Qt::Key_Left )
+		{
+			game->controlInput(Game::Straight);
 			return true;
 		}else 	if( keyEvent->key() == Qt::Key_Right )
 		{
-			game->changeDirection(Game::Straight);
+			game->controlInput(Game::Straight);
 			return true;
 		}
 	}

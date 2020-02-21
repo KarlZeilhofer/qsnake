@@ -6,13 +6,13 @@
 class Game : public QGraphicsScene
 {
 public:
-	enum Direction{Straight, Left, Right};
+	enum Controlls{Straight, Left=1, Right=2, NormalSpeed=4, Boost=8};
 	
 public:
 	Game();
 	
 	void timeStep(qreal dt);
-	void changeDirection(Direction dir);
+	void controlInput(Controlls dir);
 	void restart();
 	void addBrick();
 	void addBomb();
@@ -28,20 +28,23 @@ public:
 	
 public slots:
 	
+	
 private:
 	void setDefaults();
+	bool isColliding(QPointF& p1, QPointF& p2, qreal radius);
+	int isColliding(QList<QPointF>& list, QPointF& p2, qreal radius);
 	
 	// list of snake points in box units (allways positive, >=0)
 	// head is first element
 	QList<QPointF> snake; 
 	bool dead = false;
 	
-	QList<QPoint> bricks; // filled randomly with obstackles
-	QList<QPoint> bombs; // "food" which can be triggerd if needed in a tight situation
-	QPoint lastBomb;
+	QList<QPointF> bricks; // filled randomly with obstackles
+	QList<QPointF> bombs; // "food" which can be triggerd if needed in a tight situation
+	QPointF lastBomb;
 
 	// settings
-	qreal BombRadius;
+	qreal ExplosionRadius;
 	qreal SizeX; // pixel
 	qreal SizeY; // pixel
 	qreal BrickSize;// pixel
@@ -65,15 +68,16 @@ private:
 	QList<qreal*> values;
 	
 	qreal currentHeadDirection=0; // degrees, counter clock wise, starting from right
-	Direction currentSteering = Straight;
+	Controlls currentSteering = Straight;
 
 	int bombsCounter=0;
 	
 	bool paused = false;
 	bool selfCollision = false; 
-	const int BombFadout = 5;
-	int bombFadoutCounter=BombFadout;
-	qreal speed = 200; // px/s
+	const int BombFadeout = 20;
+	int bombFadoutCounter=BombFadeout;
+	qreal speed = 100; // px/s
+	bool boost = false;
 };
 
 #endif // SCENE_HH
